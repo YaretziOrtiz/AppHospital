@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,8 +18,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
+  bool isLoading = false;
 
-  // --- PALETA DE COLORES CLEAN (CONSISTENTE) ---
+  // --- PALETA DE COLORES CLEAN ---
   final Color medicalBlue = const Color(0xFF1A5BAA);
   final Color textPrimary = const Color(0xFF202124);
   final Color textSecondary = const Color(0xFF5F6368);
@@ -33,10 +36,88 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // --- LÓGICA DE REGISTRO CON FIREBASE ---
+  Future<void> _registerUser() async {
+    // Validaciones básicas de formulario
+    if (nameController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
+        phoneController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty) {
+      _showSnackBar("Por favor completa todos los campos", Colors.orangeAccent);
+      return;
+    }
+
+    if (passwordController.text != confirmPasswordController.text) {
+      _showSnackBar("Las contraseñas no coinciden", Colors.redAccent);
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      // 1. Crear usuario en Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+          );
+
+      String uid = userCredential.user!.uid;
+
+      // 2. Insertar en Firestore respetando la estructura exacta de tu base de datos
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'TipoSangre': "O+",
+        'activo': true,
+        'alergias': "Ninguna",
+        'apellidoMaterno': "",
+        'apellidoPaterno': "",
+        'createAt': FieldValue.serverTimestamp(),
+        'direccion': "",
+        'edad': 0,
+        'email': emailController.text.trim(),
+        'fechaNacimiento': FieldValue.serverTimestamp(),
+        'fotoPerfil': "",
+        'nombre': nameController.text.trim(),
+        'rol': "administrador",
+        'sexo': "Femenino",
+        'telefono': phoneController.text.trim(),
+      });
+
+      if (mounted) {
+        _showSnackBar("Usuario registrado exitosamente", Colors.green);
+        Navigator.pop(context);
+      }
+    } on FirebaseAuthException catch (e) {
+      String mensaje = "Error al registrar el usuario";
+      if (e.code == 'weak-password') {
+        mensaje = "La contraseña debe tener al menos 6 caracteres";
+      } else if (e.code == 'email-already-in-use') {
+        mensaje = "Este correo electrónico ya está registrado";
+      } else if (e.code == 'invalid-email') {
+        mensaje = "El correo electrónico no es válido";
+      }
+      if (mounted) _showSnackBar(mensaje, Colors.redAccent);
+    } catch (e) {
+      if (mounted) _showSnackBar("Error inesperado: $e", Colors.redAccent);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String text, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Fondo limpio plano
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: textPrimary,
@@ -68,7 +149,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               const SizedBox(height: 10),
 
-              // Icono estilizado dentro de círculo sutil
               Center(
                 child: Container(
                   width: 80,
@@ -107,7 +187,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 32),
 
-              // Campo: Nombre Completo
               _buildCleanTextField(
                 controller: nameController,
                 label: "Nombre completo",
@@ -116,7 +195,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 16),
 
-              // Campo: Correo Electrónico
               _buildCleanTextField(
                 controller: emailController,
                 label: "Correo electrónico",
@@ -126,7 +204,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 16),
 
-              // Campo: Teléfono
               _buildCleanTextField(
                 controller: phoneController,
                 label: "Teléfono",
@@ -136,7 +213,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 16),
 
-              // Campo: Contraseña
               _buildCleanTextField(
                 controller: passwordController,
                 label: "Contraseña",
@@ -160,7 +236,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 16),
 
-              // Campo: Confirmar Contraseña
               _buildCleanTextField(
                 controller: confirmPasswordController,
                 label: "Confirmar contraseña",
@@ -184,7 +259,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 36),
 
-              // Botón Principal
+              // Botón Principal con indicador de carga
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
@@ -196,46 +271,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    if (passwordController.text !=
-                        confirmPasswordController.text) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Las contraseñas no coinciden"),
-                          backgroundColor: Colors.redAccent,
+                  onPressed: isLoading ? null : _registerUser,
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          "Crear cuenta",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      );
-                      return;
-                    }
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                          "Registro listo para conectar con Firebase",
-                        ),
-                        backgroundColor: Colors.green.shade600,
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "Crear cuenta",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              // Botón Secundario Plano
               TextButton(
                 style: TextButton.styleFrom(foregroundColor: medicalBlue),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.pop(context),
                 child: Text(
                   "¿Ya tienes cuenta? Inicia sesión",
                   style: TextStyle(
@@ -252,7 +313,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // --- WIDGET AUXILIAR GENERADOR DE INPUTS MINIMALISTAS ---
   Widget _buildCleanTextField({
     required TextEditingController controller,
     required String label,

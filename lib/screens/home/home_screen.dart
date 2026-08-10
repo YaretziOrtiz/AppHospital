@@ -194,22 +194,22 @@ class HomePage extends StatelessWidget {
               children: [
                 _buildCleanMenuCard(
                   icon: Icons.calendar_month_outlined,
-                  title: "Mis Citas",
+                  title: "Mis citas",
                   onTap: () => onCardTap(1), // Hacia AppointmentsScreen
                 ),
                 _buildCleanMenuCard(
                   icon: Icons.monitor_heart_outlined,
-                  title: "Mi Salud",
+                  title: "Mi salud",
                   onTap: () => onCardTap(2), // Hacia HealthScreen
                 ),
                 _buildCleanMenuCard(
                   icon: Icons.medication_outlined,
-                  title: "Recetas Médicas",
+                  title: "Recetas médicas",
                   onTap: () => onCardTap(3), // Hacia PrescriptionsScreen
                 ),
                 _buildCleanMenuCard(
                   icon: Icons.notifications_outlined,
-                  title: "Avisos y Alertas",
+                  title: "Avisos",
                   onTap: () => onCardTap(4), // Hacia NotificationsScreen
                 ),
               ],
