@@ -1,181 +1,68 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../models/user_model.dart';
-import '../models/appointment_model.dart';
-import '../models/medical_record_model.dart';
-import '../models/prescription_model.dart';
-
-import '../utils/constants.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // ================================
-  // USUARIOS
-  // ================================
+  CollectionReference<Map<String, dynamic>> get _usersCollection {
+    return _firestore.collection('users');
+  }
 
-  // Obtener usuario por UID
+  Future<void> createUserProfile(UserModel user) async {
+    await _usersCollection.doc(user.uid).set(
+          user.toMap(),
+        );
+  }
+
   Future<UserModel?> getUser(String uid) async {
-    try {
-      DocumentSnapshot doc = await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(uid)
-          .get();
+    final document = await _usersCollection.doc(uid).get();
 
-      if (!doc.exists) {
+    if (!document.exists) {
+      return null;
+    }
+
+    return UserModel.fromFirestore(document);
+  }
+
+  Stream<UserModel?> userStream(String uid) {
+    return _usersCollection.doc(uid).snapshots().map((document) {
+      if (!document.exists) {
         return null;
       }
 
-      return UserModel.fromMap(doc.data() as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception("Error obteniendo usuario: $e");
-    }
+      return UserModel.fromFirestore(document);
+    });
   }
 
-  // Actualizar usuario
+  Stream<List<UserModel>> getUsersStream() {
+    return _usersCollection.orderBy('nombre').snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((document) => UserModel.fromFirestore(document))
+          .toList();
+    });
+  }
+
   Future<void> updateUser(UserModel user) async {
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(user.uid)
-        .update(user.toMap());
+    await _usersCollection.doc(user.uid).update(
+          user.toMap(),
+        );
   }
 
-  // ================================
-  // CITAS MÉDICAS
-  // ================================
-
-  // Crear cita
-  Future<void> createAppointment(AppointmentModel appointment) async {
-    await _firestore
-        .collection(AppConstants.appointmentsCollection)
-        .doc(appointment.appointmentId)
-        .set(appointment.toMap());
+  Future<void> updateUserRole(
+    String uid,
+    String role,
+  ) async {
+    await _usersCollection.doc(uid).update({
+      'rol': role,
+    });
   }
 
-  // Obtener citas del paciente
-  Stream<List<AppointmentModel>> getPatientAppointments(String uidPaciente) {
-    return _firestore
-        .collection(AppConstants.appointmentsCollection)
-        .where("uidPaciente", isEqualTo: uidPaciente)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => AppointmentModel.fromMap(doc.data()))
-              .toList();
-        });
-  }
-
-  // Actualizar cita
-  Future<void> updateAppointment(AppointmentModel appointment) async {
-    await _firestore
-        .collection(AppConstants.appointmentsCollection)
-        .doc(appointment.appointmentId)
-        .update(appointment.toMap());
-  }
-
-  // Eliminar cita
-  Future<void> deleteAppointment(String appointmentId) async {
-    await _firestore
-        .collection(AppConstants.appointmentsCollection)
-        .doc(appointmentId)
-        .delete();
-  }
-
-  // ================================
-  // EXPEDIENTES MÉDICOS
-  // ================================
-
-  // Crear expediente
-  Future<void> createMedicalRecord(MedicalRecordModel record) async {
-    await _firestore
-        .collection(AppConstants.medicalRecordsCollection)
-        .doc(record.recordId)
-        .set(record.toMap());
-  }
-
-  // Obtener expediente del paciente
-  Stream<List<MedicalRecordModel>> getMedicalRecords(String uidPaciente) {
-    return _firestore
-        .collection(AppConstants.medicalRecordsCollection)
-        .where("uidPaciente", isEqualTo: uidPaciente)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => MedicalRecordModel.fromMap(doc.data()))
-              .toList();
-        });
-  }
-
-  // ================================
-  // RECETAS MÉDICAS
-  // ================================
-
-  // Crear receta
-  Future<void> createPrescription(PrescriptionModel prescription) async {
-    await _firestore
-        .collection(AppConstants.prescriptionsCollection)
-        .doc(prescription.prescriptionId)
-        .set(prescription.toMap());
-  }
-
-  // Obtener recetas del paciente
-  Stream<List<PrescriptionModel>> getPatientPrescriptions(String uidPaciente) {
-    return _firestore
-        .collection(AppConstants.prescriptionsCollection)
-        .where("uidPaciente", isEqualTo: uidPaciente)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) => PrescriptionModel.fromMap(doc.data()))
-              .toList();
-        });
-  }
-
-  // Actualizar receta
-  Future<void> updatePrescription(PrescriptionModel prescription) async {
-    await _firestore
-        .collection(AppConstants.prescriptionsCollection)
-        .doc(prescription.prescriptionId)
-        .update(prescription.toMap());
-  }
-
-  // ================================
-  // NOTIFICACIONES
-  // ================================
-
-  // Crear notificación
-  Future<void> createNotification({
-    required String notificationId,
-    required String uidPaciente,
-    required String titulo,
-    required String mensaje,
-    required String tipo,
-  }) async {
-    await _firestore
-        .collection(AppConstants.notificationsCollection)
-        .doc(notificationId)
-        .set({
-          "notificationId": notificationId,
-
-          "uidPaciente": uidPaciente,
-
-          "titulo": titulo,
-
-          "mensaje": mensaje,
-
-          "tipo": tipo,
-
-          "leida": false,
-
-          "createdAt": DateTime.now(),
-        });
-  }
-
-  // Marcar notificación como leída
-  Future<void> markNotificationAsRead(String notificationId) async {
-    await _firestore
-        .collection(AppConstants.notificationsCollection)
-        .doc(notificationId)
-        .update({"leida": true});
+  Future<void> updateUserStatus(
+    String uid,
+    bool activo,
+  ) async {
+    await _usersCollection.doc(uid).update({
+      'activo': activo,
+    });
   }
 }

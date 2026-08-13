@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../home/home_screen.dart';
 
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
@@ -16,12 +15,10 @@ class _HealthScreenState extends State<HealthScreen> {
   final Color textSecondary = const Color(0xFF5F6368);
   final Color surfaceColor = const Color(0xFFF8F9FA);
 
+  // REGRESAR A LA PANTALLA ANTERIOR / HOME
   void _navigateToHome() {
-    final homeState = context.findAncestorStateOfType<State<HomeScreen>>();
-    if (homeState != null) {
-      (homeState as dynamic).setState(() {
-        (homeState as dynamic).currentIndex = 0;
-      });
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
     }
   }
 
@@ -83,8 +80,8 @@ class _HealthScreenState extends State<HealthScreen> {
           String fechaRegistro = "No disponible";
           if (medicalData["fechaRegistro"] != null &&
               medicalData["fechaRegistro"] is Timestamp) {
-            final DateTime date = (medicalData["fechaRegistro"] as Timestamp)
-                .toDate();
+            final DateTime date =
+                (medicalData["fechaRegistro"] as Timestamp).toDate();
             fechaRegistro = "${date.day}/${date.month}/${date.year}";
           }
 
@@ -200,7 +197,7 @@ class _HealthScreenState extends State<HealthScreen> {
 
                 const SizedBox(height: 20),
 
-                // Botón Minimalista Outlined o Flat
+                // Botón Minimalista Outlined
                 SizedBox(
                   width: double.infinity,
                   height: 48,

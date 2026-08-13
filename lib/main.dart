@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'config/firebase_options.dart';
@@ -20,6 +21,23 @@ class MedLinkApp extends StatelessWidget {
     return MaterialApp(
       title: 'MedLink',
       debugShowCheckedModeBanner: false,
+
+      // ============================================================
+      // LOCALIZACIÓN (Para DatePicker en español)
+      // ============================================================
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es', 'MX'),
+        Locale('en', 'US'),
+      ],
+
+      // ============================================================
+      // TEMA DE LA APLICACIÓN
+      // ============================================================
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.blue,
@@ -30,6 +48,7 @@ class MedLinkApp extends StatelessWidget {
           centerTitle: true,
         ),
       ),
+
       home: const LoginScreen(),
     );
   }

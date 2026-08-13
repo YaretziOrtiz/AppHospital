@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../home/home_screen.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -188,8 +187,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                         .collection("users")
                         .snapshots(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData)
+                      if (!snapshot.hasData) {
                         return const CircularProgressIndicator();
+                      }
                       final docs = snapshot.data!.docs;
                       return DropdownButtonFormField<DocumentReference>(
                         decoration: const InputDecoration(
@@ -296,12 +296,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
+  // REGRESAR A LA PANTALLA ANTERIOR / HOME
   void _navigateToHome() {
-    final homeState = context.findAncestorStateOfType<State<HomeScreen>>();
-    if (homeState != null) {
-      (homeState as dynamic).setState(() {
-        (homeState as dynamic).currentIndex = 0;
-      });
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
     }
   }
 
@@ -339,9 +337,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection("appointments")
-            .snapshots(),
+        stream:
+            FirebaseFirestore.instance.collection("appointments").snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -531,7 +528,11 @@ class AppointmentCleanCard extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: textSecondary),
                   ),
                   PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, size: 20, color: textSecondary),
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 20,
+                      color: textSecondary,
+                    ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onSelected: (value) {
@@ -540,7 +541,10 @@ class AppointmentCleanCard extends StatelessWidget {
                     },
                     itemBuilder: (_) => const [
                       PopupMenuItem(value: "Editar", child: Text("Editar")),
-                      PopupMenuItem(value: "Eliminar", child: Text("Eliminar")),
+                      PopupMenuItem(
+                        value: "Eliminar",
+                        child: Text("Eliminar"),
+                      ),
                     ],
                   ),
                 ],

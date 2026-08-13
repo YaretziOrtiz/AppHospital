@@ -3,66 +3,70 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Obtener usuario actual
-  User? get currentUser => _auth.currentUser;
-
-  // Registro de usuario
-  Future<User?> register(String email, String password) async {
+  Future<UserCredential> register({
+    required String email,
+    required String password,
+  }) async {
     try {
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email,
+      return await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
         password: password,
       );
-
-      print("Usuario registrado");
-      print("UID Firebase Auth: ${result.user!.uid}");
-      print("Correo: ${result.user!.email}");
-
-      return result.user;
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? "Error al registrar usuario");
+      throw Exception(_getErrorMessage(e.code));
     }
   }
 
-  // Inicio de sesión
-  Future<User?> login(String email, String password) async {
+  Future<UserCredential> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      UserCredential result = await _auth.signInWithEmailAndPassword(
+      return await _auth.signInWithEmailAndPassword(
         email: email.trim(),
-        password: password.trim(),
+        password: password,
       );
-
-      print("==========================");
-      print("LOGIN CORRECTO");
-      print("UID Firebase Auth: ${result.user!.uid}");
-      print("Correo: ${result.user!.email}");
-      print("==========================");
-
-      return result.user;
     } on FirebaseAuthException catch (e) {
-      print("ERROR FIREBASE AUTH");
-      print(e.code);
-      print(e.message);
-
-      throw Exception(e.message ?? "Error al iniciar sesión");
+      throw Exception(_getErrorMessage(e.code));
     }
   }
 
-  // Enviar correo de verificación
-  Future<void> sendEmailVerification() async {
-    User? user = _auth.currentUser;
-
-    if (user != null && !user.emailVerified) {
-      await user.sendEmailVerification();
-
-      print("Correo de verificación enviado a ${user.email}");
-    }
-  }
-
-  // Cerrar sesión
   Future<void> logout() async {
     await _auth.signOut();
+  }
 
-    print("Sesión cerrada");
+  User? get currentUser {
+    return _auth.currentUser;
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'email-already-in-use':
+        return 'Este correo ya está registrado.';
+
+      case 'invalid-email':
+        return 'El correo electrónico no es válido.';
+
+      case 'weak-password':
+        return 'La contraseña es demasiado débil.';
+
+      case 'user-not-found':
+        return 'No existe una cuenta con este correo.';
+
+      case 'wrong-password':
+        return 'La contraseña es incorrecta.';
+
+      case 'invalid-credential':
+        return 'El correo o la contraseña son incorrectos.';
+
+      case 'user-disabled':
+        return 'Esta cuenta está deshabilitada.';
+
+      case 'too-many-requests':
+        return 'Demasiados intentos. Intenta nuevamente más tarde.';
+
+      default:
+        return 'Ocurrió un error. Intenta nuevamente.';
+    }
   }
 }

@@ -3,13 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../login/login_screen.dart';
-import '../home/home_screen.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  // --- PALETA DE COLORES CLEAN (IDÉNTICA A HOME Y PESTAÑAS ANTERIORES) ---
+  // --- PALETA DE COLORES CLEAN ---
   final Color medicalBlue = const Color(0xFF1A5BAA);
   final Color textPrimary = const Color(0xFF202124);
   final Color textSecondary = const Color(0xFF5F6368);
@@ -53,12 +52,10 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
+  // REGRESAR A LA PANTALLA ANTERIOR / HOME
   void _navigateToHome(BuildContext context) {
-    final homeState = context.findAncestorStateOfType<State<HomeScreen>>();
-    if (homeState != null) {
-      (homeState as dynamic).setState(() {
-        (homeState as dynamic).currentIndex = 0;
-      });
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
     }
   }
 
@@ -79,9 +76,10 @@ class ProfileScreen extends StatelessWidget {
     }
 
     return StreamBuilder<DocumentSnapshot>(
+      // Consulta con el UID del usuario actual
       stream: FirebaseFirestore.instance
           .collection("users")
-          .doc("JEsqUxkKPaushkSUn3I7")
+          .doc(user.uid)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -126,8 +124,7 @@ class ProfileScreen extends StatelessWidget {
         }
 
         return Scaffold(
-          backgroundColor:
-              Colors.white, // Fondo limpio e idéntico a todo el ecosistema
+          backgroundColor: Colors.white,
           appBar: AppBar(
             backgroundColor: Colors.white,
             foregroundColor: textPrimary,
@@ -173,14 +170,12 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         child: CircleAvatar(
                           radius: 50,
-                          backgroundImage:
-                              data["fotoPerfil"] != null &&
+                          backgroundImage: data["fotoPerfil"] != null &&
                                   data["fotoPerfil"].toString().isNotEmpty
                               ? NetworkImage(data["fotoPerfil"])
                               : null,
                           backgroundColor: surfaceColor,
-                          child:
-                              data["fotoPerfil"] == null ||
+                          child: data["fotoPerfil"] == null ||
                                   data["fotoPerfil"].toString().isEmpty
                               ? Icon(
                                   Icons.person_outline,
@@ -216,7 +211,7 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
 
-                // Bloque 1: Información Personal (Planos, Estilo Home)
+                // Bloque 1: Información Personal
                 Container(
                   decoration: BoxDecoration(
                     color: surfaceColor,
@@ -251,7 +246,7 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Bloque 2: Ajustes y Cuenta (Planos, Estilo Home)
+                // Bloque 2: Ajustes y Cuenta
                 Container(
                   decoration: BoxDecoration(
                     color: surfaceColor,

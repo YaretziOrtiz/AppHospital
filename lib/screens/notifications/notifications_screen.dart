@@ -10,7 +10,7 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // --- PALETA DE COLORES CLEAN (IDÉNTICA A TU DISEÑO BASE) ---
+  // --- PALETA DE COLORES CLEAN ---
   final Color medicalBlue = const Color(0xFF1A5BAA);
   final Color textPrimary = const Color(0xFF202124);
   final Color textSecondary = const Color(0xFF5F6368);
@@ -44,12 +44,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  // REGRESAR A LA PANTALLA ANTERIOR / HOME
   void _navigateToHome() {
-    final homeState = context.findAncestorStateOfType<State<HomeScreen>>();
-    if (homeState != null) {
-      (homeState as dynamic).setState(() {
-        (homeState as dynamic).currentIndex = 0;
-      });
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -158,7 +162,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           size: 20,
                         ),
                       ),
-                      // Indicador de "No leído" en forma de punto azul minimalista
                       if (!isRead)
                         Positioned(
                           top: 2,
@@ -179,9 +182,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isRead ? FontWeight.w600 : FontWeight.bold,
-                      color: isRead
-                          ? textPrimary.withOpacity(0.8)
-                          : textPrimary,
+                      color:
+                          isRead ? textPrimary.withOpacity(0.8) : textPrimary,
                     ),
                   ),
                   subtitle: Padding(
@@ -190,9 +192,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       data["mensaje"] ?? "Sin mensaje disponible.",
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: isRead
-                            ? FontWeight.normal
-                            : FontWeight.w500,
+                        fontWeight:
+                            isRead ? FontWeight.normal : FontWeight.w500,
                         color: isRead
                             ? textSecondary
                             : textPrimary.withOpacity(0.9),
@@ -213,7 +214,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                     );
 
-                    // Actualiza el estado a leído en la base de datos de manera silenciosa
                     FirebaseFirestore.instance
                         .collection("notifications")
                         .doc(id)

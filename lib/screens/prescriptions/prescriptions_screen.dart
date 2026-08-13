@@ -16,12 +16,16 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   final Color textSecondary = const Color(0xFF5F6368);
   final Color surfaceColor = const Color(0xFFF8F9FA);
 
+  // REGRESAR A LA PANTALLA ANTERIOR / HOME
   void _navigateToHome() {
-    final homeState = context.findAncestorStateOfType<State<HomeScreen>>();
-    if (homeState != null) {
-      (homeState as dynamic).setState(() {
-        (homeState as dynamic).currentIndex = 0;
-      });
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -53,9 +57,8 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection("prescriptions")
-            .snapshots(),
+        stream:
+            FirebaseFirestore.instance.collection("prescriptions").snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
